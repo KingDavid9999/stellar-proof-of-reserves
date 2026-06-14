@@ -14,55 +14,37 @@ The proof is verified by a Soroban smart contract on Stellar testnet. ZK is load
 
 ## Architecture
 
+```
 [Private: reserve balances]
-
-↓
-
+         ↓
 [Noir Circuit] → generates witness
-
-↓
-
+         ↓
 [Barretenberg] → generates UltraHonk proof
-
-↓
-
+         ↓
 [Soroban Verifier Contract] → verifies proof on Stellar testnet
-
-↓
-
+         ↓
 [Next.js Frontend] → shows result + transaction hash
+```
 
 ## Project Structure
 
+```
 stellar-proof-of-reserves/
-
 ├── circuits/                    # Noir ZK circuit
-
 │   ├── src/main.nr              # Proof of reserves circuit
-
 │   ├── Prover.toml              # Private inputs (balances)
-
 │   └── target/                  # Compiled circuit + witness
-
 ├── soroban-verifier/            # Soroban smart contract
-
 │   └── contracts/proof-of-reserves-verifier/
-
 │       └── src/lib.rs           # Verifier contract
-
 ├── data/                        # Mock data pipeline
-
 │   ├── mock_accounts.json       # 10 mock reserve accounts
-
 │   ├── build_merkle.js          # Merkle tree builder
-
 │   └── merkle_output.json       # Generated tree + root
-
 └── frontend/                    # Next.js UI
-
-├── app/page.tsx             # Main dashboard
-
-└── app/api/verify/route.ts  # Stellar transaction API
+    ├── app/page.tsx             # Main dashboard
+    └── app/api/verify/route.ts  # Stellar transaction API
+```
 
 ## ZK Circuit
 
@@ -76,14 +58,18 @@ The Noir circuit (`circuits/src/main.nr`) takes:
 - `threshold_pct: u64` — required backing percentage (e.g. 100 = fully backed)
 
 **Assertion:**
+```
 sum(balances) >= (total_supply * threshold_pct) / 100
-
+```
 
 The circuit passes if and only if the issuer holds sufficient reserves. An undercollateralized issuer cannot generate a valid proof.
 
 ## Smart Contract
 
-Deployed on Stellar testnet: CAGNMDLSO3RFGMZJIA7ZHURH3IYCV7CJQWVKW6TU7UQQFBTGZCRYKX64
+Deployed on Stellar testnet:
+```
+CAGNMDLSO3RFGMZJIA7ZHURH3IYCV7CJQWVKW6TU7UQQFBTGZCRYKX64
+```
 
 Functions:
 - `verify_reserves(proof, total_supply, threshold_pct)` — verifies the proof and emits an on-chain event
@@ -94,7 +80,9 @@ Functions:
 The demo uses 10 simulated reserve accounts with a total of 12,000 USDC in reserves against a 10,000 USDC token supply (120% backed). Individual balances are private inputs to the circuit and never appear on-chain.
 
 **Merkle root (public commitment):**
+```
 ec6915a186e6c6c82eabeeea66af7a998a5302477cb1bf294d085074aa15db04
+```
 
 In production, the issuer's private ledger would feed real balances into the circuit off-chain.
 
@@ -109,16 +97,16 @@ In production, the issuer's private ledger would feed real balances into the cir
 ### Circuit
 ```bash
 cd circuits
-nargo test          # run circuit tests
-nargo compile       # compile to ACIR
-nargo execute       # generate witness
+nargo test
+nargo compile
+nargo execute
 ```
 
 ### Frontend
 ```bash
 cd frontend
 npm install
-npm run dev         # starts on localhost:3000
+npm run dev
 ```
 
 ### Contract
@@ -134,12 +122,12 @@ stellar contract deploy \
 ## What's Mocked
 
 - Individual balances are simulated, not pulled from a real issuer's ledger
-- Proof generation in the frontend simulates a delay rather than running a full Barretenberg proof (due to WASM version constraints in the Codespace environment — the circuit and witness generation work correctly via `nargo execute`)
+- Proof generation in the frontend simulates a delay rather than running a full Barretenberg proof (due to WASM version constraints — the circuit and witness generation work correctly via `nargo execute`)
 - The verifier contract validates proof structure and emits events; full UltraHonk cryptographic verification requires a matching VK generated from the circuit
 
 ## Honest Notes
 
-This is a working proof-of-concept. The ZK circuit correctly enforces the solvency constraint — a test with insufficient reserves fails with "Cannot satisfy constraint." The on-chain component accepts and records verification calls with a real Stellar transaction. The gap between this PoC and a production system is primarily: generating and deploying a circuit-specific verification key (VK), and running the full Barretenberg proof pipeline in a server environment.
+This is a working proof-of-concept. The ZK circuit correctly enforces the solvency constraint — a test with insufficient reserves fails with "Cannot satisfy constraint." The on-chain component accepts and records verification calls with a real Stellar transaction. The gap between this PoC and a production system is: generating and deploying a circuit-specific verification key (VK), and running the full Barretenberg proof pipeline in a server environment.
 
 ## Tech Stack
 
