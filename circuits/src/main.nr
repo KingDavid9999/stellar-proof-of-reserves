@@ -27,3 +27,11 @@ fn test_sufficient_reserves() {
     ];
     main(balances, 10000, 100);
 }
+#[test(should_fail)]
+fn test_insufficient_reserves() {
+    let balances: [u64; 10] = [
+        100, 200, 300, 50, 75,
+        120, 80, 90, 150, 35
+    ];
+    main(balances, 10000, 100);
+}
